@@ -1,0 +1,3 @@
+import { env } from '../../../../lib/server';
+import { identity,canViewRecord } from '../../../../lib/access';
+export async function GET(r:Request,{params}:{params:Promise<{id:string}>}){try{const who=await identity(r);const {id}=await params;const record=await env.DB!.prepare('SELECT employee FROM attendance WHERE photo=?').bind(id).first();if(!canViewRecord(who,record))return new Response('Photo not found',{status:404});const object=await env.BUCKET?.get(id);if(!object)return new Response('Photo not found',{status:404});return new Response(object.body,{headers:{'Content-Type':object.httpMetadata?.contentType||'image/jpeg','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}})}catch(e:any){return new Response(e.message,{status:e.status||500})}}

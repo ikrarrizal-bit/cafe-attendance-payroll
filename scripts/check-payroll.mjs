@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {addDays,cafeDay,tally} from '../lib/payroll.ts';
+assert.equal(addDays('2026-01-31',30),'2026-03-02');
+assert.equal(addDays('2024-02-01',30),'2024-03-02');
+assert.equal(cafeDay(new Date('2026-10-11T18:00:00Z')),'2026-10-12');
+const e={id:'one',start:'2026-01-01',rate:9999};
+const records=[{id:'a',employee:'one',day:'2026-01-01',basis:'daily',rate:100,clockIn:'2026-01-01T01:00Z',clockOut:'2026-01-01T09:00Z'},{id:'b',employee:'one',day:'2026-01-30',basis:'hourly',rate:20,clockIn:'2026-01-30T15:00Z',clockOut:'2026-01-31T01:00Z'},{id:'c',employee:'one',day:'2026-01-31',basis:'daily',rate:100,clockIn:'2026-01-31T01:00Z',clockOut:null},{id:'d',employee:'other',day:'2026-01-01',basis:'daily',rate:500}];
+const first=tally(e,records,[]);assert.equal(first.amount,300);assert.equal(first.hours,18);assert.equal(first.days,2);assert.equal(first.open,0);assert.equal(first.end,'2026-01-31');
+const second=tally(e,records,[{employee:'one',start:first.start,end:first.end}]);assert.equal(second.start,'2026-01-31');assert.equal(second.end,'2026-03-02');assert.equal(second.amount,100);assert.equal(second.open,1);
+const unpaid=tally(e,records,[]);assert.equal(unpaid.start,'2026-01-01','Unpaid periods do not reset merely because time passes');
+assert.equal(tally({...e,id:'other',start:'2026-02-01'},records,[]).amount,0);
+assert.equal(tally(e,[{employee:'one',day:'2026-01-01',basis:'hourly',rate:20,clockIn:'2026-01-01T01:00Z',clockOut:null}],[]).amount,0);
+console.log('Payroll checks passed: calendar boundaries, overnight hours, saved rates, separate employees, unpaid cycles and open attendance.');
