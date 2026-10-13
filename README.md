@@ -68,6 +68,8 @@ Use Share selfie to WhatsApp to select the café group in the phone share menu. 
 
 ## Behaviour and limits
 
+Owner Overview now shows payment reminders for each employee's unpaid 30-calendar-day cycle. Settings → Payment reminders selects a 3-day or 2-day lead time. The reminders continue through tomorrow, due today and overdue until payment is recorded. Amounts are labelled Calculated so far. Recording a payment advances that person's reminder to their next unpaid cycle. Disabled employees with unpaid attendance remain included; disabled employees with no attendance in the period are excluded. These are in-app reminders while the owner opens the dashboard, not push messages or background email/WhatsApp notifications. No database migration is needed.
+
 Staff can change their own password from the phone check-in page → Change my password, or `/account/password`. They must enter the current password and confirm a new password of at least 12 characters. The server verifies the current password and uses only that user's authenticated account to make the update. Forgotten-password recovery remains an owner/Supabase task. Because Supabase identities are shared across the two café apps, changing a shared account's password also changes its reservation-app sign-in password.
 
 - Each employee has their own 30-calendar-day cycle.

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {addDays,cafeDay,tally} from '../lib/payroll.ts';
+import {addDays,cafeDay,tally,paymentReminders} from '../lib/payroll.ts';
 assert.equal(addDays('2026-01-31',30),'2026-03-02');
 assert.equal(addDays('2024-02-01',30),'2024-03-02');
 assert.equal(cafeDay(new Date('2026-10-11T18:00:00Z')),'2026-10-12');
@@ -11,3 +11,19 @@ const unpaid=tally(e,records,[]);assert.equal(unpaid.start,'2026-01-01','Unpaid 
 assert.equal(tally({...e,id:'other',start:'2026-02-01'},records,[]).amount,0);
 assert.equal(tally(e,[{employee:'one',day:'2026-01-01',basis:'hourly',rate:20,clockIn:'2026-01-01T01:00Z',clockOut:null}],[]).amount,0);
 console.log('Payroll checks passed: calendar boundaries, overnight hours, saved rates, separate employees, unpaid cycles and open attendance.');
+const reminderEmployee={id:'reminder',name:'Test staff',active:1,start:'2026-10-01'};
+const reminderPeriod={...reminderEmployee,...tally(reminderEmployee,[],[])};
+assert.equal(paymentReminders([reminderPeriod],'2026-10-27').length,0);
+assert.equal(paymentReminders([reminderPeriod],'2026-10-28')[0].daysUntil,3);
+assert.equal(paymentReminders([reminderPeriod],'2026-10-28',2).length,0);
+assert.equal(paymentReminders([reminderPeriod],'2026-10-29',2)[0].daysUntil,2);
+assert.equal(paymentReminders([reminderPeriod],'2026-10-30')[0].daysUntil,1);
+assert.equal(paymentReminders([reminderPeriod],'2026-10-31')[0].daysUntil,0);
+assert.equal(paymentReminders([reminderPeriod],'2026-11-01')[0].daysUntil,-1);
+const paidPeriod={...reminderEmployee,...tally(reminderEmployee,[],[{employee:reminderEmployee.id,start:'2026-10-01',end:'2026-10-31'}])};
+assert.equal(paymentReminders([paidPeriod],'2026-10-31').length,0);
+assert.equal(paymentReminders([paidPeriod],'2026-11-27')[0].daysUntil,3);
+assert.equal(paymentReminders([{...reminderPeriod,active:0}],'2026-10-31').length,0);
+assert.equal(paymentReminders([{...reminderPeriod,active:0,days:1}],'2026-10-31').length,1);
+assert.equal(paymentReminders([{...reminderPeriod,end:'not-a-date'}],'2026-10-31').length,0);
+console.log('Payment reminder checks passed: 3/2-day choices, tomorrow, due day, overdue, paid-cycle advancement and inactive staff.');
