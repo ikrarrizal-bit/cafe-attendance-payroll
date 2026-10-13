@@ -1,0 +1,5 @@
+import {env} from './server';
+import {saveSetting} from './work-rules';
+export function bankSignature(bank:any){return bank?JSON.stringify([bank.bankName,bank.accountHolder,bank.accountNumber]):''}
+export function validateBankDetails(body:any){const bankName=String(body.bankName||'').trim(),accountHolder=String(body.accountHolder||'').trim(),accountNumber=String(body.accountNumber||'').replace(/[\s-]/g,'');if(!bankName||bankName.length>100||!accountHolder||accountHolder.length>120)throw Error('Enter the bank name and account holder’s name.');if(!/^\d{4,34}$/.test(accountNumber))throw Error('Enter an account number of 4–34 digits. Leading zeros are preserved.');return {bankName,accountHolder,accountNumber}}
+export async function saveBankDetails(body:any,ownerId:string){if(!await env.DB.prepare('SELECT id FROM employees WHERE id=?').bind(body.employee).first())throw Error('Employee not found.');const bankDetails=body.action==='clear'?null:{...validateBankDetails(body),updatedAt:new Date().toISOString(),updatedBy:ownerId};await saveSetting('bank:'+body.employee,bankDetails);return bankDetails}
