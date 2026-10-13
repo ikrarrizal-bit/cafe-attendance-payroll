@@ -58,6 +58,8 @@ Before deployment, add the same four environment variables in Vercel project set
 
 ## 6. Add one employee for a phone test
 
+Owners can now open Settings → Staff account administration, or `/admin/staff`, to create and link accounts directly. Add the employee profile in Team first. Choose Create a new account, enter the employee email and an initial password of at least 12 characters, and confirm that the email belongs to that employee. The new account is confirmed and linked automatically. If the email already has a Supabase account, choose Link an existing account; its password is not changed. Disable access and Unlink only change access to this attendance app, preserving records and the shared Supabase account. No database migration is required for this feature. Password reset remains managed through Supabase.
+
 Create the employee's confirmed email/password account in Supabase Authentication. In the café app, Team → Add employee, set their name, rate, pay basis, cycle starting date and matching sign-in email. You do not need to expose the Supabase dashboard to employees.
 
 On the phone, open your new HTTPS address followed by `/login`. Staff sign in and are taken to `/staff`. Choose a shift, tap Take your selfie, then Upload selfie & check in. The server saves the employee identity, date and check-in time automatically. Use Finish shift & check out at the end of work.

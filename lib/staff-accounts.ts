@@ -1,0 +1,21 @@
+import {env} from './server';
+import {AccessError} from './access';
+async function authAdmin(path:string,init:RequestInit={}):Promise<any>{const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('Account management is not configured.');const r=await fetch(url.replace(/\/$/,'')+'/auth/v1/admin'+path,{...init,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',...init.headers},cache:'no-store'});const body:any=await r.json();if(!r.ok)throw Error(body.msg||body.message||'Account request failed.');return body}
+async function findUser(email:string){for(let page=1;page<=20;page++){const body=await authAdmin('/users?page='+page+'&per_page=100');const users=body.users||[];const found=users.find((u:any)=>u.email?.trim().toLowerCase()===email);if(found)return found;if(users.length<100)return null}throw Error('Could not complete the account search. Contact the administrator.')}
+export async function accountList(){const result=await env.DB.prepare('SELECT id,name,role,active,loginEmail,authUserId FROM employees').all();return result.results.map((e:any)=>({...e,status:!e.active?'Disabled':e.authUserId?'Linked':e.loginEmail?'Email set; account not linked':'No account'}))}
+export async function manageAccount(b:any){const e:any=await env.DB.prepare('SELECT * FROM employees WHERE id=?').bind(b.employee).first();if(!e)throw Error('Employee not found.');
+ if(b.action==='access'){if(typeof b.active!=='boolean')throw Error('Choose active or disabled.');await env.DB.prepare('UPDATE employees SET active=? WHERE id=?').bind(b.active?1:0,e.id).run();return 'Staff access updated.'}
+ if(b.action==='unlink'){await env.DB.prepare('UPDATE employees SET loginEmail=?,authUserId=? WHERE id=?').bind(null,null,e.id).run();return 'Account unlinked. Attendance and payroll records are preserved.'}
+ if(!['create','link'].includes(b.action))throw Error('Unknown account action.');
+ const email=String(b.email||'').trim().toLowerCase();if(email.length>254||!/^\S+@\S+\.\S+$/.test(email))throw Error('Enter a valid staff email.');
+ if(email===env.CAFE_OWNER_EMAIL?.trim().toLowerCase())throw new AccessError('The owner account cannot be linked as staff.');
+ if(e.authUserId)throw Error('Unlink the current account before linking a different account.');
+ const duplicate:any=await env.DB.prepare('SELECT id FROM employees WHERE loginEmail=?').bind(email).first();if(duplicate&&duplicate.id!==e.id)throw Error('This email is already linked to another employee.');
+ let user=await findUser(email),created=false;
+ if(b.action==='create'){if(user)throw Error('An account already exists for this email. Choose Link existing account; its password will be kept.');if(typeof b.password!=='string'||b.password.length<12||b.password.length>128)throw Error('Use a password between 12 and 128 characters.');if(b.confirmed!==true)throw Error('Confirm that this email belongs to the employee.');const result=await authAdmin('/users',{method:'POST',body:JSON.stringify({email,password:b.password,email_confirm:true,app_metadata:{cafe_attendance_managed:true}})});user=result.user||result;created=true}
+ if(!user)throw Error('No sign-in account exists for this email. Choose Create account.');
+ if(!user.email_confirmed_at)throw Error('The existing account email must be confirmed before linking.');
+ const other:any=await env.DB.prepare('SELECT id FROM employees WHERE authUserId=?').bind(user.id).first();if(other&&other.id!==e.id)throw Error('This account is already linked to another employee.');
+ try{await env.DB.prepare('UPDATE employees SET loginEmail=?,authUserId=? WHERE id=? AND authUserId IS NULL').bind(email,user.id,e.id).run();const saved:any=await env.DB.prepare('SELECT * FROM employees WHERE id=?').bind(e.id).first();if(saved?.authUserId!==user.id||saved?.loginEmail!==email)throw Error('The employee link changed. Refresh and try again.')}catch(error){if(created)throw Error('The sign-in account was created, but linking did not finish. Refresh, then use Link existing account with the same email.');throw error}
+ return created?'Account created and linked. Share the password privately with the employee.':'Existing account linked. Its password is unchanged.';
+}
