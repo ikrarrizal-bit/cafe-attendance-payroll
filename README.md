@@ -68,6 +68,8 @@ Use Share selfie to WhatsApp to select the café group in the phone share menu. 
 
 ## Behaviour and limits
 
+Staff can change their own password from the phone check-in page → Change my password, or `/account/password`. They must enter the current password and confirm a new password of at least 12 characters. The server verifies the current password and uses only that user's authenticated account to make the update. Forgotten-password recovery remains an owner/Supabase task. Because Supabase identities are shared across the two café apps, changing a shared account's password also changes its reservation-app sign-in password.
+
 - Each employee has their own 30-calendar-day cycle.
 - Daily pay is attended days × saved rate; hourly pay uses completed check-in/check-out hours × saved rate.
 - Rates are captured when attendance is recorded. Later edits affect future records.
