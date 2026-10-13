@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,8 +7,12 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
+    apple: "/apple-touch-icon.png",
   },
+  appleWebApp: { capable: true, title: "Café Team", statusBarStyle: "default" },
 };
+
+export const viewport: Viewport = { themeColor: "#164e63" };
 
 export default function RootLayout({
   children,
