@@ -68,18 +68,26 @@ Use Share selfie to WhatsApp to select the café group in the phone share menu. 
 
 ## Behaviour and limits
 
+Open Paydays, days off & overtime from the owner sidebar or Settings (`/admin/work-rules`). Choose each employee's fixed payday, then choose exactly four dates off per calendar month. The first period begins on the agreed employment/payroll start date; later periods run between paydays. Dates 29–31 are clamped to the last day in shorter months. Previously paid periods stay unchanged.
+
+New check-ins snapshot their scheduled shift times. Overtime begins after the saved shift end (including overnight shifts), is zero below one hour, rounds up once at least one hour is worked, and caps at four hours at Rp10,000/hour. Only approved overtime enters salary. Hourly ordinary pay excludes hours after scheduled shift end, avoiding double payment. Records from before this update retain their previous calculation until the owner records their original shift times. Overtime approval requires IDR payroll. Pending overtime must be approved or rejected before payment can be recorded.
+
+Payroll Review and the work-rules page show a full date-by-date report for the actual period, including presence, absence, day off, future dates, working hours, overtime, selfies, and CSV export. Without a saved four-day schedule, missing records are marked Schedule not set rather than assumed absent. Today is marked Not checked in yet until attendance arrives. Working on a scheduled day off is labelled separately but uses the existing rate plus approved overtime; no extra day-off premium has been configured.
+
+New recorded payments retain the detailed report and the regular/overtime pay breakdown in their existing snapshot field. Older payment snapshots remain preserved but do not contain the newer full reports. Paid attendance decisions and days off inside paid periods are locked. All new configuration uses the existing settings table; no new SQL migration is needed.
+
 Owner Overview now shows payment reminders for each employee's unpaid 30-calendar-day cycle. Settings → Payment reminders selects a 3-day or 2-day lead time. The reminders continue through tomorrow, due today and overdue until payment is recorded. Amounts are labelled Calculated so far. Recording a payment advances that person's reminder to their next unpaid cycle. Disabled employees with unpaid attendance remain included; disabled employees with no attendance in the period are excluded. These are in-app reminders while the owner opens the dashboard, not push messages or background email/WhatsApp notifications. No database migration is needed.
 
 Staff can change their own password from the phone check-in page → Change my password, or `/account/password`. They must enter the current password and confirm a new password of at least 12 characters. The server verifies the current password and uses only that user's authenticated account to make the update. Forgotten-password recovery remains an owner/Supabase task. Because Supabase identities are shared across the two café apps, changing a shared account's password also changes its reservation-app sign-in password.
 
-- Each employee has their own 30-calendar-day cycle.
+- Each employee can have a fixed monthly payday, covering the previous payday through the day before the next. Existing 30-day cycles remain until a payday is configured.
 - Daily pay is attended days × saved rate; hourly pay uses completed check-in/check-out hours × saved rate.
 - Rates are captured when attendance is recorded. Later edits affect future records.
 - Recording a completed payment advances one period and keeps history. It does not transfer money.
 - Attendance uses Asia/Jakarta time, one check-in per employee per calendar day.
 - Selfies are capped at 4 MB; the staff screen resizes them before upload.
 - Sessions last up to one hour. Sign in again after expiry.
-- Break deductions, overtime rules and fixed monthly-salary calculations have not been configured.
+- Break deductions and fixed monthly-salary calculations are not configured. Approved overtime is calculated at Rp10,000 per hour, with at least one hour required, rounding up, capped at four hours.
 - Cloudflare local data is not migrated into Supabase automatically.
 
 ## Verification status
@@ -87,3 +95,4 @@ Staff can change their own password from the phone check-in page → Change my p
 TypeScript, payroll and mocked Supabase adapter/access checks passed. Production compilation and TypeScript completed in one build attempt, but final page generation was blocked by Windows sandbox EPERM file-creation errors; a complete production build is not yet verified. The development server reported Ready, but an HTTP readiness check timed out. Browser/camera, real Supabase connectivity and Vercel deployment remain unverified until your account settings are connected. No new site has been published.
 
 References: https://vercel.com/docs/frameworks/full-stack/nextjs ; https://supabase.com/docs/guides/auth/passwords ; https://supabase.com/docs/guides/storage/buckets/creating-buckets
+
