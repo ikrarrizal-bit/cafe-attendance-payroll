@@ -4,7 +4,7 @@ import path from 'node:path';
 const escapeXml = (text: string) => text.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[char]!));
 
 /** Append a readable footer without covering the employee's face. */
-export async function stampSelfie(bytes: ArrayBuffer, name: string, checkedInAt: Date): Promise<ArrayBuffer> {
+export async function stampSelfie(bytes: ArrayBuffer, name: string, checkedInAt: Date, late = false): Promise<ArrayBuffer> {
   const photo = await sharp(Buffer.from(bytes), { limitInputPixels: 25_000_000 })
     .rotate().resize({ width: 1400, height: 1400, fit: 'inside', withoutEnlargement: true })
     .toBuffer({ resolveWithObject: true });
@@ -28,7 +28,7 @@ export async function stampSelfie(bytes: ArrayBuffer, name: string, checkedInAt:
     left: padding, top: photo.info.height + padding + index * lineHeight,
   })));
   const result = await sharp(photo.data)
-    .extend({ bottom: footerHeight, background: '#164e63' })
+    .extend({ bottom: footerHeight, background: late ? '#b91c1c' : '#164e63' })
     .composite(labels)
     .jpeg({ quality: 88 }).toBuffer();
   return result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength) as ArrayBuffer;
