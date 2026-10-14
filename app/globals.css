@@ -10,3 +10,7 @@
 .attendance-division { padding: 18px 0; border-top: 1px solid #e5e7eb; }
 .attendance-division h3 { margin: 0 0 12px; }
 .attendance-division .help { margin-bottom: 0; }
+.division-tabs { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; padding: 4px 0 12px; }
+.division-tabs button { flex: 0 0 auto; display: flex; align-items: center; gap: 7px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; cursor: pointer; white-space: nowrap; }
+.division-tabs button.selected { background: #164e63; border-color: #164e63; color: #fff; }
+.division-tabs button:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
