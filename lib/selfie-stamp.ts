@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import path from 'node:path';
 
 const escapeXml = (text: string) => text.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[char]!));
 
@@ -17,13 +18,18 @@ export async function stampSelfie(bytes: ArrayBuffer, name: string, checkedInAt:
   }).format(checkedInAt) + ' WIB';
   const lineHeight = Math.ceil(fontSize * 1.5);
   const footerHeight = padding * 2 + lineHeight * (lines.length + 1);
-  const labels = [...lines, date].map((line, index) =>
-    `<text x="${padding}" y="${padding + fontSize + index * lineHeight}" font-family="DejaVu Sans, Arial, sans-serif" font-size="${fontSize}" fill="white">${escapeXml(line)}</text>`
-  ).join('');
-  const footer = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${footerHeight}"><rect width="100%" height="100%" fill="#164e63"/>${labels}</svg>`);
+  // Explicitly load the bundled font: serverless hosts may have no system fonts.
+  const labels = await Promise.all([...lines, date].map(async (line, index) => ({
+    input: await sharp({ text: {
+      text: `<span foreground="white">${escapeXml(line)}</span>`,
+      font: `Geist ${fontSize}`, fontfile: path.join(process.cwd(), 'public/fonts/Geist-Regular.ttf'),
+      rgba: true, dpi: 72,
+    } }).png().toBuffer(),
+    left: padding, top: photo.info.height + padding + index * lineHeight,
+  })));
   const result = await sharp(photo.data)
     .extend({ bottom: footerHeight, background: '#164e63' })
-    .composite([{ input: footer, left: 0, top: photo.info.height }])
+    .composite(labels)
     .jpeg({ quality: 88 }).toBuffer();
   return result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength) as ArrayBuffer;
 }
