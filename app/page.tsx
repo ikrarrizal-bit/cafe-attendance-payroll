@@ -5,6 +5,7 @@ import { addDays,cafeDay,tally } from '../lib/payroll';
 import { loadData } from '../lib/load-data';
 import PaymentReminders from './payment-reminders';
 import LeaveNotice from './leave-notice';
+import {divisions,division} from '../lib/staff-divisions';
 import PayrollReport from './payroll-report';
 import BankDetails from './bank-details';
 import {savedSetting} from '../lib/payroll';
@@ -24,17 +25,7 @@ export default function Home(){
  const employees=data?.employees||[],records=data?.attendance||[],payments=data?.payments||[],shifts=data?.shifts||[],today=data?.today||cafeDay(),currency=data?.settings?.currency||'IDR';
  const money=(n:number,c=currency)=>new Intl.NumberFormat('en-GB',{style:'currency',currency:c,maximumFractionDigits:2}).format(n);
  const person=(id:string)=>employees.find((e:any)=>e.id===id);
- const divisions=['Cashier','Barista','Server staff','Kitchen staff','Steward','Office Boys','Others'];
- function division(role:string=''){
-   const words=role.toLowerCase().trim().split(/[^a-z]+/);
-   if(words.some(w=>['cashier','kasir'].includes(w)))return 'Cashier';
-   if(words.includes('barista'))return 'Barista';
-   if(words.some(w=>['server','waiter','waitress','waitstaff','pelayan'].includes(w)))return 'Server staff';
-   if(words.some(w=>['steward','stewards','dishwasher'].includes(w)))return 'Steward';
-   if((words.includes('office')&&words.some(w=>['boy','boys'].includes(w)))||words.includes('ob'))return 'Office Boys';
-   if(words.some(w=>['kitchen','chef','cheff','cook','cooking','koki','dapur'].includes(w)))return 'Kitchen staff';
-   return 'Others';
- }
+
 
  const active=employees.filter((e:any)=>e.active),present=records.filter((r:any)=>r.day===today),payroll=employees.map((e:any)=>({...e,...tally(e,records,payments,data?.settings||{})})),due=payroll.filter((e:any)=>e.end<=today);
  const initials=(name:string)=>name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
