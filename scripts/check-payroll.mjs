@@ -56,3 +56,18 @@ assert.equal(overtime({...work,clockIn:'2026-10-03T18:00:00+07:00',clockOut:'202
 assert.equal(tally(monthly,[{...work,basis:'daily',rate:100000}],[],approved).amount,120000);
 const rejected={...shift,'overtime:ot':JSON.stringify({status:'rejected',hours:0,signature:ot.signature})};assert.equal(tally(monthly,[work],[],rejected).amount,160000);assert.equal(tally(monthly,[work],[],rejected).pendingOvertime,0);
 console.log('Monthly payday, 4-day schedules, absence report and approved overtime checks passed.');
+const leaveSettings={
+ 'leave:sick':JSON.stringify({employee:'one',start:'2026-01-02',end:'2026-01-03',kind:'sick',status:'approved'}),
+ 'leave:other':JSON.stringify({employee:'one',start:'2026-01-04',end:'2026-01-04',kind:'other',status:'approved'}),
+ 'leave:pending':JSON.stringify({employee:'one',start:'2026-01-05',end:'2026-01-05',kind:'sick',status:'pending'}),
+ 'leave:otherStaff':JSON.stringify({employee:'different',start:'2026-01-06',end:'2026-01-06',kind:'sick',status:'approved'}),
+};
+const leaveReport=attendanceReport(e,records,e.start,leaveSettings,'2026-01-30');
+assert.equal(leaveReport[1].status,'Sick leave (unpaid)');
+assert.equal(leaveReport[2].status,'Sick leave (unpaid)');
+assert.equal(leaveReport[3].status,'Approved leave (unpaid)');
+assert.equal(leaveReport[4].status,'Schedule not set','Pending leave does not change absence status');
+assert.equal(leaveReport[5].status,'Schedule not set','Another employee leave stays separate');
+assert.equal(tally(e,records,[],leaveSettings).amount,tally(e,records,[]).amount,'Unpaid leave adds no salary');
+assert.equal(attendanceReport(e,records,e.start,{'leave:overlap':JSON.stringify({employee:'one',start:'2026-01-01',end:'2026-01-01',kind:'sick',status:'approved'})},'2026-01-30')[0].status,'Present','Saved attendance is never hidden');
+console.log('Unpaid leave report checks passed: inclusive dates, types, pending status, staff isolation and salary unchanged.');
