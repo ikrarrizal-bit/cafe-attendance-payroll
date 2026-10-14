@@ -98,3 +98,17 @@ TypeScript, payroll and mocked Supabase adapter/access checks passed. Production
 
 References: https://vercel.com/docs/frameworks/full-stack/nextjs ; https://supabase.com/docs/guides/auth/passwords ; https://supabase.com/docs/guides/storage/buckets/creating-buckets
 
+
+## Overtime assignments and phone notifications
+
+Owners open **Assign overtime & view responses** on the dashboard. Select staff, inclusive dates, one to four planned hours per date, and the overtime job. Staff open **Overtime requests** to accept or reject each date before checking out. Requests refresh every 30 seconds on that page.
+
+Acceptance alone does not authorize payment. Actual completed overtime uses the existing minimum-one-hour rounding rule, capped at the assigned hours and four-hour maximum. Final owner approval remains in **Paydays, days off & overtime**. Pending or rejected assignments add no overtime pay. Existing attendance without an assignment retains the previous manual approval process.
+
+For phone notifications:
+1. The setup script `node scripts/setup-push.mjs` generates a stable key pair in the ignored `.env.local` file. Do not regenerate keys after staff subscribe.
+2. Copy `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` from `.env.local` into the Vercel project's Production environment variables. Keep the private key confidential. Redeploy after adding them.
+3. Each staff member signs in on their own phone and taps **Enable overtime phone notifications**. iPhone requires iOS 16.4+ and opening the app added to the Home Screen.
+4. Test an assignment to a consenting test staff member, close the app, and check that tapping the notification opens the assignment page. Sign in again if the session expired.
+
+Push delivery is best effort; owner results report sent/failed attempts, not proof the phone displayed or read the alert. Saved requests remain inside the app when delivery fails or permissions are denied. No attendance or payroll data is cached by the service worker. No SQL migration is required.

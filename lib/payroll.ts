@@ -18,12 +18,15 @@ export function overtime(record:any,settings:any={}){
  const endDay=known&&schedule.end<=schedule.start?addDays(record.day,1):record.day;
  const scheduledEnd=known?endDay+'T'+schedule.end+':00+07:00':null;
  const extraHours=known&&record.clockOut?Math.max(0,(finish-Math.max(start,Date.parse(scheduledEnd!)))/3600000):0;
- const payableHours=extraHours>=1?Math.min(4,Math.ceil(extraHours)):0;
- const signature=[record.clockIn,record.clockOut,scheduledEnd].join('|');
+ const assignment=savedSetting(settings,'overtimeAssignment:'+record.employee+':'+record.day);
+ const accepted=!assignment||assignment.status==='accepted';
+ const actualPayableHours=extraHours>=1?Math.min(4,Math.ceil(extraHours)):0;
+ const payableHours=accepted?Math.min(actualPayableHours,assignment?.hours||4):0;
+ const signature=[record.clockIn,record.clockOut,scheduledEnd,...(assignment?[assignment.status,assignment.hours]:[])].join('|');
  const decision=savedSetting(settings,'overtime:'+record.id);
  const approved=decision?.status==='approved'&&decision.signature===signature&&decision.hours===payableHours;
  const rejected=decision?.status==='rejected'&&decision.signature===signature;
- return {hours,known,scheduledEnd,extraHours,payableHours,signature,regularHours:known?Math.max(0,hours-extraHours):hours,approvedHours:approved?decision.hours:0,approvedAmount:approved?decision.hours*10000:0,status:!record.clockOut?'Open shift':!known?'Schedule not recorded':payableHours===0?'No eligible overtime':approved?'Approved':rejected?'Rejected':'Pending approval'};
+ return {hours,known,scheduledEnd,extraHours,payableHours,signature,regularHours:known?Math.max(0,hours-extraHours):hours,approvedHours:approved?decision.hours:0,approvedAmount:approved?decision.hours*10000:0,status:!record.clockOut?'Open shift':!known?'Schedule not recorded':!accepted?'Assignment not accepted':payableHours===0?'No eligible overtime':approved?'Approved':rejected?'Rejected':'Pending approval'};
 }
 export function validateDaysOff(month:string,dates:any){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!Array.isArray(dates)||dates.length!==4||new Set(dates).size!==4)throw Error('Select exactly four different days off for this calendar month.');for(const day of dates){if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||day.slice(0,7)!==month||!Number.isFinite(Date.parse(day))||new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day)throw Error('All four dates must be valid days in the selected month.')}return [...dates].sort()}
 export function approvedLeave(settings:any,employee:string,day:string){return Object.keys(settings).filter(key=>key.startsWith('leave:')).map(key=>savedSetting(settings,key)).find(x=>x?.employee===employee&&x.status==='approved'&&x.start<=day&&x.end>=day)}

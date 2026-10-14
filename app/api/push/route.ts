@@ -1,0 +1,7 @@
+import {identity,writeOrigin} from '../../../lib/access';
+import {env} from '../../../lib/server';
+import {saveSetting} from '../../../lib/work-rules';
+import {pushConfigured,subscriptionKey,validateSubscription} from '../../../lib/push';
+const json=(b:any,status=200)=>Response.json(b,{status,headers:{'Cache-Control':'no-store'}});
+export async function GET(r:Request){try{await identity(r);return json({configured:pushConfigured(),publicKey:pushConfigured()?process.env.VAPID_PUBLIC_KEY:null})}catch(e:any){return json({error:e.message},e.status||400)}}
+export async function POST(r:Request){try{const who=await identity(r);writeOrigin(r);if(who.role!=='employee')throw Error('Use your staff account to enable notifications.');const b=await r.json();const sub=validateSubscription(b.subscription);const key=subscriptionKey(sub.endpoint);if(b.action==='disable'){const old:any=await env.DB.prepare('SELECT value FROM settings WHERE key=?').bind(key).first();if(old&&JSON.parse(old.value)?.employee===who.employee.id)await saveSetting(key,null)}else{if(!pushConfigured())throw Error('Phone notifications are not configured yet.');await saveSetting(key,{employee:who.employee.id,userId:who.userId,subscription:sub})}return json({ok:true})}catch(e:any){return json({error:e.message},e.status||400)}}

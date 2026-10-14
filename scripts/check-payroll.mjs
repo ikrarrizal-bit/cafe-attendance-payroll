@@ -71,3 +71,16 @@ assert.equal(leaveReport[5].status,'Schedule not set','Another employee leave st
 assert.equal(tally(e,records,[],leaveSettings).amount,tally(e,records,[]).amount,'Unpaid leave adds no salary');
 assert.equal(attendanceReport(e,records,e.start,{'leave:overlap':JSON.stringify({employee:'one',start:'2026-01-01',end:'2026-01-01',kind:'sick',status:'approved'})},'2026-01-30')[0].status,'Present','Saved attendance is never hidden');
 console.log('Unpaid leave report checks passed: inclusive dates, types, pending status, staff isolation and salary unchanged.');
+const assignedRecord={id:'assigned-test',employee:'one',day:'2026-10-14',basis:'daily',rate:100,clockIn:'2026-10-14T07:00:00+07:00',clockOut:'2026-10-14T18:30:00+07:00'};
+const assignedSettings={'attendanceSchedule:assigned-test':JSON.stringify({start:'07:00',end:'15:00'}),'overtimeAssignment:one:2026-10-14':JSON.stringify({status:'pending',hours:2})};
+assert.equal(overtime(assignedRecord,assignedSettings).payableHours,0);
+assert.equal(overtime(assignedRecord,assignedSettings).status,'Assignment not accepted');
+assignedSettings['overtimeAssignment:one:2026-10-14']=JSON.stringify({status:'accepted',hours:2});
+const acceptedOvertime=overtime(assignedRecord,assignedSettings);
+assert.equal(acceptedOvertime.payableHours,2,'Accepted assignment caps rounded actual overtime');
+assert.equal(acceptedOvertime.approvedAmount,0,'Acceptance does not bypass final owner approval');
+assignedSettings['overtime:assigned-test']=JSON.stringify({status:'approved',hours:2,signature:acceptedOvertime.signature});
+assert.equal(overtime(assignedRecord,assignedSettings).approvedAmount,20000);
+assignedSettings['overtimeAssignment:one:2026-10-14']=JSON.stringify({status:'rejected',hours:2});
+assert.equal(overtime(assignedRecord,assignedSettings).approvedAmount,0,'Rejected assignment never adds pay');
+console.log('Assignment payroll checks passed: acceptance, planned cap, final approval and rejection.');
