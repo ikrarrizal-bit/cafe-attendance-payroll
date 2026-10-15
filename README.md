@@ -112,3 +112,15 @@ For phone notifications:
 4. Test an assignment to a consenting test staff member, close the app, and check that tapping the notification opens the assignment page. Sign in again if the session expired.
 
 Push delivery is best effort; owner results report sent/failed attempts, not proof the phone displayed or read the alert. Saved requests remain inside the app when delivery fails or permissions are denied. No attendance or payroll data is cached by the service worker. No SQL migration is required.
+
+## Paid staff breaks
+
+Each open shift supports one paid break. Staff tap **Start break** on their own attendance page. A reminder is due after 60 minutes. The return is marked red only when more than 90 minutes have elapsed. **Resume shift** requires a fresh phone GPS position within 20 metres of the café and reported accuracy of 20 metres or better. The original 100-metre check-in radius is unchanged. Staff must resume before checking out. Breaks do not reduce salary or hourly working time. Break start/return and late status appear in the owner's attendance table and payroll report/CSV; new paid snapshots preserve them.
+
+### Deploying reminders (Vercel Pro)
+
+The included `vercel.json` runs `/api/cron/break-reminders` every minute. This requires Vercel Pro. Run `node scripts/setup-break-reminders.mjs` to generate `CRON_SECRET` privately in `.env.local`. Add that value to the project's **Production** environment variables in Vercel, alongside the existing three VAPID variables, then redeploy. Never expose or commit this secret. The endpoint rejects requests without its matching bearer token.
+
+Staff must enable notifications on their own phone. Existing users should reopen the app so the service worker updates. A scheduled run sends reminders for active breaks due after 60 minutes; delivery may be delayed by scheduling, networking, or phone settings. A saved reminder lease prevents overlapping scheduled runs from duplicating a successfully sent alert. Failed/no-device sends retry up to five times. If at least one subscribed phone accepts the alert, the break is marked notified; other failed devices are not retried separately. The app's countdown and lateness calculation use server timestamps and do not depend on notification delivery. No continuous location tracking is performed: GPS is checked when the staff member taps Resume shift.
+
+Test with a dedicated employee: start a break, confirm a second start is blocked, check that checkout is unavailable during the break, resume within the café area, and verify the paid hours remain unchanged. Use the local scripts for the 60/90-minute boundary checks without waiting. Production records and timers should not be edited for testing.

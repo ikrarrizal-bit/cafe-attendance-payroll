@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {breakSummary} from '../lib/break-rules.ts';
+import {validateCheckInLocation,cafeLocation} from '../lib/checkin-location.ts';
+import {tally,attendanceReport} from '../lib/payroll.ts';
+const startedAt='2026-10-15T03:00:00Z',start=Date.parse(startedAt);
+const value={employee:'alice',attendance:'a',startedAt};
+assert.equal(breakSummary(value,start+60*60000).dueAt,'2026-10-15T04:00:00.000Z');
+assert.equal(breakSummary(value,start+90*60000).late,false);
+assert.equal(breakSummary(value,start+90*60000+1000).late,true);
+assert.equal(breakSummary({...value,resumedAt:'2026-10-15T04:15:00Z'},start+5*3600000).late,false);
+assert.equal(breakSummary({...value,resumedAt:'2026-10-15T04:31:00Z'}).status,'Returned late');
+function form(latitude=cafeLocation.latitude,accuracy=5){const f=new FormData();for(const [k,v]of Object.entries({latitude,longitude:cafeLocation.longitude,locationAccuracy:accuracy,locationTimestamp:start}))f.set(k,String(v));return f}
+assert.doesNotThrow(()=>validateCheckInLocation(form(cafeLocation.latitude+0.0001),start,20,20));
+assert.throws(()=>validateCheckInLocation(form(cafeLocation.latitude+0.0003),start,20,20),/20 metres/);
+assert.throws(()=>validateCheckInLocation(form(cafeLocation.latitude,21),start,20,20),/accurate enough/);
+const employee={id:'alice',start:'2026-10-15'};
+const records=[{id:'a',employee:'alice',day:'2026-10-15',basis:'hourly',rate:10000,clockIn:'2026-10-15T00:00:00Z',clockOut:'2026-10-15T08:00:00Z'}];
+const settings={'break:a':JSON.stringify({...value,resumedAt:'2026-10-15T04:31:00Z'})};
+assert.equal(tally(employee,records,[],settings).amount,80000,'Paid break does not reduce hourly salary');
+assert.equal(attendanceReport(employee,records,employee.start,settings,'2026-10-15')[0].break.late,true);
+console.log('Break checks passed: 60-minute reminder, red after 90, frozen return, 20-metre location, GPS accuracy and paid salary.');

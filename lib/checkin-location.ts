@@ -8,7 +8,7 @@ export function distanceMetres(latitude: number, longitude: number): number {
   return 6371000 * 2 * Math.atan2(Math.sqrt(Math.min(1, a)), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-export function validateCheckInLocation(form: FormData, now = Date.now()) {
+export function validateCheckInLocation(form: FormData, now = Date.now(), radiusMetres = cafeLocation.radiusMetres, maximumAccuracy = 50) {
   const read = (key: string) => {
     const value = form.get(key);
     if (typeof value !== 'string' || !value.trim()) throw Error('Allow phone location access to check in at the café.');
@@ -19,9 +19,9 @@ export function validateCheckInLocation(form: FormData, now = Date.now()) {
   const latitude = read('latitude'), longitude = read('longitude'), accuracy = read('locationAccuracy'), capturedAt = read('locationTimestamp');
   if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy < 0) throw Error('Your location could not be verified. Please try again.');
   if (capturedAt < now - 60000 || capturedAt > now + 15000) throw Error('Your location is out of date. Please try checking in again.');
-  if (accuracy > 50) throw Error('Your GPS location is not accurate enough. Enable precise location, move near the café entrance and try again.');
+  if (accuracy > maximumAccuracy) throw Error('Your GPS location is not accurate enough. Enable precise location, move near the café entrance and try again.');
   const distance = distanceMetres(latitude, longitude);
-  if (distance > cafeLocation.radiusMetres) throw Error('Check-in is only available within 100 metres of the café. Please arrive at the café and try again.');
+  if (distance > radiusMetres) throw Error(`You must be within ${radiusMetres} metres of the café. Please return to the café and try again.`);
   return { latitude, longitude, accuracy, distanceMetres: Math.round(distance), verifiedAt: new Date(now).toISOString() };
 }
 
