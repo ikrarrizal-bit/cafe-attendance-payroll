@@ -1,4 +1,4 @@
-export const cafeLocation = { latitude: -5.126339, longitude: 105.307036, radiusMetres: 100 };
+export const cafeLocation = { latitude: -5.126339, longitude: 105.307036, radiusMetres: 20 };
 
 export function distanceMetres(latitude: number, longitude: number): number {
   const radians = (degrees: number) => degrees * Math.PI / 180;
@@ -8,7 +8,7 @@ export function distanceMetres(latitude: number, longitude: number): number {
   return 6371000 * 2 * Math.atan2(Math.sqrt(Math.min(1, a)), Math.sqrt(Math.max(0, 1 - a)));
 }
 
-export function validateCheckInLocation(form: FormData, now = Date.now(), radiusMetres = cafeLocation.radiusMetres, maximumAccuracy = 50) {
+export function validateCheckInLocation(form: FormData, now = Date.now(), radiusMetres = cafeLocation.radiusMetres, maximumAccuracy = 20) {
   const read = (key: string) => {
     const value = form.get(key);
     if (typeof value !== 'string' || !value.trim()) throw Error('Allow phone location access to check in at the café.');

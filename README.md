@@ -115,7 +115,7 @@ Push delivery is best effort; owner results report sent/failed attempts, not pro
 
 ## Paid staff breaks
 
-Each open shift supports one paid break. Staff tap **Start break** on their own attendance page. A reminder is due after 60 minutes. The return is marked red only when more than 90 minutes have elapsed. **Resume shift** requires a fresh phone GPS position within 20 metres of the café and reported accuracy of 20 metres or better. The original 100-metre check-in radius is unchanged. Staff must resume before checking out. Breaks do not reduce salary or hourly working time. Break start/return and late status appear in the owner's attendance table and payroll report/CSV; new paid snapshots preserve them.
+Each open shift supports one paid break. Staff tap **Start break** on their own attendance page. A reminder is due after 60 minutes. The return is marked red only when more than 90 minutes have elapsed. **Resume shift** requires a fresh phone GPS position within 20 metres of the café and reported accuracy of 20 metres or better. Staff check-in also requires a position within 20 metres and reported accuracy of 20 metres or better. Staff must resume before checking out. Breaks do not reduce salary or hourly working time. Break start/return and late status appear in the owner's attendance table and payroll report/CSV; new paid snapshots preserve them.
 
 ### Deploying reminders (Vercel Pro)
 
