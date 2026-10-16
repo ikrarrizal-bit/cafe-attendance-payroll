@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {onTimePerformance} from '../lib/on-time-performance.ts';
+import {onTimePerformance,approvedOnTimeBonus} from '../lib/on-time-performance.ts';
 const rows=['06:59:59','07:00:00','07:00:01','07:04:00'].map((t,i)=>({id:String(i),day:'2026-10-16',clockIn:'2026-10-16T'+t+'+07:00'}));
 const settings=Object.fromEntries(rows.map(r=>['attendanceSchedule:'+r.id,JSON.stringify({start:'07:00',end:'15:00'})]));
 const score=onTimePerformance([...rows,{id:'missing',day:'2026-10-16',clockIn:'2026-10-16T00:00:00Z'}],settings);
@@ -8,3 +8,10 @@ assert.equal(onTimePerformance([],{}).percentage,null);
 assert.equal(onTimePerformance([{id:'overnight',day:'2026-10-16',clockIn:'2026-10-16T14:59:00Z'}],{'attendanceSchedule:overnight':JSON.stringify({start:'22:00',end:'06:00'})}).early,1);
 assert.equal(onTimePerformance(rows,{'attendanceSchedule:0':'bad json'}).unknown,4);
 console.log('On-time checks passed: early/exact start, strict late boundary, unknown schedules, Jakarta time and empty periods.');
+
+assert.equal(approvedOnTimeBonus(rows,settings,null).amount,0,'No approval adds no on-time bonus');
+assert.equal(approvedOnTimeBonus(rows,settings,{qualifying:2,amount:10000}).amount,10000);
+assert.throws(()=>approvedOnTimeBonus(rows,settings,{qualifying:3,amount:15000}),/changed/);
+assert.throws(()=>approvedOnTimeBonus(rows,settings,{qualifying:2,amount:50000}),/changed/);
+assert.throws(()=>approvedOnTimeBonus(rows,settings,{qualifying:2,amount:10000},'USD'),/IDR/);
+console.log('On-time bonus checks passed: Rp5,000 rate, required approval, stale/forged amounts and IDR validation.');
