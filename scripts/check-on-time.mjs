@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {onTimePerformance} from '../lib/on-time-performance.ts';
+const rows=['06:59:59','07:00:00','07:00:01','07:04:00'].map((t,i)=>({id:String(i),day:'2026-10-16',clockIn:'2026-10-16T'+t+'+07:00'}));
+const settings=Object.fromEntries(rows.map(r=>['attendanceSchedule:'+r.id,JSON.stringify({start:'07:00',end:'15:00'})]));
+const score=onTimePerformance([...rows,{id:'missing',day:'2026-10-16',clockIn:'2026-10-16T00:00:00Z'}],settings);
+assert.equal(score.early,1);assert.equal(score.onTime,1);assert.equal(score.late,2);assert.equal(score.qualifying,2);assert.equal(score.percentage,50);assert.equal(score.unknown,1);
+assert.equal(onTimePerformance([],{}).percentage,null);
+assert.equal(onTimePerformance([{id:'overnight',day:'2026-10-16',clockIn:'2026-10-16T14:59:00Z'}],{'attendanceSchedule:overnight':JSON.stringify({start:'22:00',end:'06:00'})}).early,1);
+assert.equal(onTimePerformance(rows,{'attendanceSchedule:0':'bad json'}).unknown,4);
+console.log('On-time checks passed: early/exact start, strict late boundary, unknown schedules, Jakarta time and empty periods.');

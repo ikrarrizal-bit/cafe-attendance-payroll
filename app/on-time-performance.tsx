@@ -1,0 +1,5 @@
+import {onTimePerformance} from '../lib/on-time-performance';
+export default function OnTimePerformance({records,settings}:{records:any[];settings:Record<string,string>}){
+ const score=onTimePerformance(records,settings);
+ return <section aria-label="On-time performance" style={{padding:'16px',margin:'16px 0',background:'#f0f7f4',borderRadius:10}}><h3>On-time performance</h3><p><strong>{score.qualifying} on-time or early arrivals out of {score.assessed} assessed check-ins{score.percentage!==null?' · '+score.percentage+'%':''}</strong></p><p className="help">Early: {score.early} · Exactly on time: {score.onTime} · After shift start: {score.late}</p>{score.unknown>0&&<p className="help">{score.unknown} check-in{score.unknown===1?'':'s'} excluded because the original shift start or check-in time is unavailable.</p>}<p className="help">Based on this pay period and the shift start saved at check-in. Arriving at or before the shift start qualifies; the five-minute late-color grace is not applied to this score.</p></section>;
+}
