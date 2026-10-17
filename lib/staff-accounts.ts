@@ -2,8 +2,23 @@ import {env} from './server';
 import {AccessError} from './access';
 async function authAdmin(path:string,init:RequestInit={}):Promise<any>{const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('Account management is not configured.');const r=await fetch(url.replace(/\/$/,'')+'/auth/v1/admin'+path,{...init,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',...init.headers},cache:'no-store'});const body:any=await r.json();if(!r.ok)throw Error(body.msg||body.message||'Account request failed.');return body}
 async function findUser(email:string){for(let page=1;page<=20;page++){const body=await authAdmin('/users?page='+page+'&per_page=100');const users=body.users||[];const found=users.find((u:any)=>u.email?.trim().toLowerCase()===email);if(found)return found;if(users.length<100)return null}throw Error('Could not complete the account search. Contact the administrator.')}
+export async function clearTemporaryPassword(userId:string,version:string){
+ const result=await authAdmin('/users/'+encodeURIComponent(userId));const user=result.user||result;
+ if(user.app_metadata?.cafe_temporary_password!==version)throw Error('The owner changed this password again. Please sign in again.');
+ await authAdmin('/users/'+encodeURIComponent(userId),{method:'PUT',body:JSON.stringify({app_metadata:{...user.app_metadata,cafe_temporary_password:null}})});
+}
 export async function accountList(){const result=await env.DB.prepare('SELECT id,name,role,active,loginEmail,authUserId FROM employees').all();return result.results.map((e:any)=>({...e,status:!e.active?'Disabled':e.authUserId?'Linked':e.loginEmail?'Email set; account not linked':'No account'}))}
 export async function manageAccount(b:any){const e:any=await env.DB.prepare('SELECT * FROM employees WHERE id=?').bind(b.employee).first();if(!e)throw Error('Employee not found.');
+ if(b.action==='temporaryPassword'){
+  if(!e.authUserId||!e.loginEmail)throw Error('Link a sign-in account first.');
+  if(typeof b.password!=='string'||b.password.length<12||b.password.length>128)throw Error('Use a temporary password between 12 and 128 characters.');
+  if(b.password!==b.confirmPassword)throw Error('The temporary passwords do not match.');
+  const result=await authAdmin('/users/'+encodeURIComponent(e.authUserId)),user=result.user||result;
+  const email=user.email?.trim().toLowerCase();
+  if(!email||email!==e.loginEmail.trim().toLowerCase()||email===env.CAFE_OWNER_EMAIL?.trim().toLowerCase())throw new AccessError('The staff account link must be reviewed before resetting this password.');
+  await authAdmin('/users/'+encodeURIComponent(e.authUserId),{method:'PUT',body:JSON.stringify({password:b.password,app_metadata:{...user.app_metadata,cafe_temporary_password:crypto.randomUUID()}})});
+  return 'Temporary password set. Share it privately with the employee. They must change it after signing in. The password also changes in other apps using this same Supabase account.';
+ }
  if(b.action==='access'){if(typeof b.active!=='boolean')throw Error('Choose active or disabled.');await env.DB.prepare('UPDATE employees SET active=? WHERE id=?').bind(b.active?1:0,e.id).run();return 'Staff access updated.'}
  if(b.action==='unlink'){await env.DB.prepare('UPDATE employees SET loginEmail=?,authUserId=? WHERE id=?').bind(null,null,e.id).run();return 'Account unlinked. Attendance and payroll records are preserved.'}
  if(!['create','link'].includes(b.action))throw Error('Unknown account action.');

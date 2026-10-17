@@ -18,6 +18,7 @@ export async function identity(request:Request):Promise<Identity>{
   employee=await env.DB.prepare('SELECT * FROM employees WHERE id=? AND authUserId=? AND active=1').bind(employee.id,userId).first();
   if(!employee)throw new AccessError('Account linking changed. Ask the café owner to review your profile.');
  }
+ if(user.temporaryPasswordToken&&new URL(request.url).pathname!=='/api/password')throw new AccessError('Change your temporary password before using the staff app.',428);
  return {role:'employee',userId,employee};
 }
 export function writeOrigin(request:Request){if(request.headers.get('origin')!==new URL(request.url).origin)throw new AccessError('Invalid request origin.')}
