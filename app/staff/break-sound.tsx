@@ -1,17 +1,17 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
 
-/** A short synthesized chime: no audio download or background playback. */
+/** A six-second, three-pair synthesized alert: no audio download or background playback. */
 export function playBreakChime(context:AudioContext){
  const at=context.currentTime;
- for(const [delay,frequency] of [[0,660],[0.48,523.25]]){
+ for(const [delay,frequency] of [[0,880],[0.65,660],[2,880],[2.65,660],[4,880],[4.65,660]]){
   const tone=context.createOscillator(),gain=context.createGain();
-  tone.type='sine';tone.frequency.value=frequency;
+  tone.type='triangle';tone.frequency.value=frequency;
   gain.gain.setValueAtTime(0.0001,at+delay);
-  gain.gain.exponentialRampToValueAtTime(0.22,at+delay+0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001,at+delay+1.1);
+  gain.gain.exponentialRampToValueAtTime(0.38,at+delay+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001,at+delay+1.25);
   tone.connect(gain);gain.connect(context.destination);
-  tone.start(at+delay);tone.stop(at+delay+1.15);
+  tone.start(at+delay);tone.stop(at+delay+1.3);
   tone.onended=()=>{tone.disconnect();gain.disconnect()};
  }
 }
@@ -46,5 +46,5 @@ export default function BreakSound({attendance,dueAt,active,now}:{attendance:str
   playBreakChime(context);if(active&&due)mark();setEnabled(true);setMessage('Break sound enabled. Keep this app open to hear it.');
  }catch(e:any){setEnabled(false);setMessage(e.message)}finally{setBusy(false)}}
  function disable(){setEnabled(false);const context=audio.current;audio.current=null;void context?.close().catch(()=>{});setMessage('Break sound off. Phone push reminders are unchanged.');}
- return <div style={{margin:'12px 0'}}><button type="button" className="secondary full" disabled={busy} onClick={enabled?disable:enable}>{busy?'Enabling…':enabled?'Break sound on · Turn off':'Enable break sound'}</button><p className="help" role="status">{message||'Tap to enable and test the ding-dong sound.'}</p></div>;
+ return <div style={{margin:'12px 0'}}><button type="button" className="secondary full" disabled={busy} onClick={enabled?disable:enable}>{busy?'Enabling…':enabled?'Break sound on · Turn off':'Enable break sound'}</button><p className="help" role="status">{message||'Tap to test the louder, six-second break alarm. Adjust your phone’s media volume.'}</p></div>;
 }
